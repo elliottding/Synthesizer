@@ -2,6 +2,8 @@ module WaveTable (WaveTable, sine, triangle, sawtooth, sample,
                   sampleDuration) where
 
 import BasicTypes (Sample, SampleRate, Frequency, defaultSampleRate)
+import Util (takeEvery)
+
 
 -- A list of Doubles, representing the positional data of an oscillating wave
 -- over a single period.
@@ -36,15 +38,10 @@ sawtooth :: WaveTable
 sawtooth = makeWaveTable' 1 f where
     f t = t - fromIntegral (truncate t)
 
--- Take every nth element from a list.
-takeEvery :: Int -> [a] -> [a]
-takeEvery n [] = []
-takeEvery n (x:xs) = x : (takeEvery n $ drop (n-1) xs)
-
 -- Generate (infinite) samples from a WaveTable at a given frequency.
 sampleForever :: WaveTable -> Frequency -> [Sample]
 sampleForever wt freq = takeEvery n $ cycle wt where
-    n = truncate $ defaultSampleRate / freq
+    n = truncate $ freq -- defaultSampleRate / freq
 
 -- Generate n samples from a WaveTable at a given frequency.
 sample :: WaveTable -> Frequency -> Int -> [Sample]

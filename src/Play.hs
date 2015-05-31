@@ -1,4 +1,4 @@
-module Sound (play) where
+module Play (play) where
 
 import BasicTypes (Sample, defaultSampleRate)
 import WaveTable (WaveTable)
