@@ -1,38 +1,40 @@
 module Synth where
 
-import BasicTypes (Sample, Synthesis, Frequency, additive, defaultSampleRate)
-import Envelope (ASDR, envelop, asdrRelease)
+import Envelope (ADSR, envelop, adsrRelease)
 import Oscillator (Oscillator, sample)
 import Note (Note(..))
-import Util (zipWithOffset)
+import Samples (Samples(..), composeAll, zipWithOffset)
+-- import Util (zipWithOffset, zipWithPadding)
+
+import qualified Data.Vector as V
 
 data Synth = Synth { synthOsc :: [Oscillator]
-                   , synthVol :: Double
-                   , synthMethod :: Synthesis
-                   , synthEnvelope :: ASDR
+                   , synthAmp :: Double
+                   , synthEnv :: ADSR
+                   , synthSR :: Double
                    }
 
-synthesize :: Synth -> Frequency -> Int -> [Sample]
-synthesize (Synth oscs vol method asdr) freq n = enveloped where
-    oscSamples = fmap (\o -> sample o freq n) oscs
-    samples = foldr method [] oscSamples
-    volumed = map (vol *) samples
-    enveloped = envelop asdr defaultSampleRate volumed
+synthesize :: Synth -> Double -> Int -> Samples
+synthesize (Synth oscs amp adsr sr) freq n = enveloped where
+    oscSamples = map (\o -> sample o sr freq n) oscs
+    samples = composeAll oscSamples
+    amped = V.map (amp *) samples
+    enveloped = envelop adsr sr amped
 
-synthesizeDuration :: Synth -> Frequency -> Double -> [Sample]
+synthesizeDuration :: Synth -> Double -> Double -> Samples
 synthesizeDuration synth freq secs = synthesize synth freq n where
-    n = truncate $ secs * defaultSampleRate
+    n = truncate $ secs * (synthSR synth)
 
-synthesizeNote :: Synth -> Note -> [Sample]
+synthesizeNote :: Synth -> Note -> Samples
 synthesizeNote synth (Note _ duration freq) = 
     synthesizeDuration synth freq secs where 
-        secs = duration + (asdrRelease (synthEnvelope synth))
+        secs = duration + (adsrRelease (synthEnv synth))
 
-combineNote :: Synth -> Note -> [Sample] -> [Sample]
+combineNote :: Synth -> Note -> Samples -> Samples
 combineNote synth note@(Note time duration freq) samples =
-    zipWithOffset (+) 0 offset samples synthesized where
-        offset = truncate $ time * defaultSampleRate
+    zipWithOffset (+) 0 0 0 offset samples synthesized where
+        offset = truncate $ time * (synthSR synth)
         synthesized = synthesizeNote synth note
 
-synthesizeNotes :: Synth -> [Note] -> [Sample]
-synthesizeNotes synth notes = foldr (combineNote synth) [] notes
+synthesizeNotes :: Synth -> [Note] -> Samples
+synthesizeNotes synth notes = foldr (combineNote synth) V.empty notes

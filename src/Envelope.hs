@@ -1,36 +1,32 @@
-module Envelope where
+module Envelope (ADSR(..)
+                , envelop) where
 
-import BasicTypes (Sample)
+import Samples (Samples(..))
 
-import Data.List.Split (splitPlaces)
+import qualified Data.Vector as V
 
-data ASDR = ASDR { asdrAttack :: Double
-                 , asdrDecay :: Double
-                 , asdrSustain :: Double
-                 , asdrRelease :: Double
-                 }
+data ADSR = ADSR { adsrAttack :: Double
+                 , adsrDecay :: Double
+                 , adsrSustain :: Double
+                 , adsrRelease :: Double
+                 } deriving (Show)
 
-modulate :: (Fractional a, Enum a) => (a -> a) -> [a] -> [a]
-modulate f as = zipWith (*) as bs where
-    bs = fmap (f . flip (/) n) [0..n]
-    n = fromIntegral $ length as
+-- Interpolate x between a and b.
+interpolate :: Double -> Double -> Double -> Double
+interpolate a b x = x * (b - a) + a
 
-{-
-attack :: ASDR -> Double -> [Double]
-attack (ASDR a _ _ _) sr = modulate id $ replicate n 1.0 where
-    n = truncate $ sr * a
+-- Float division on Ints.
+divf :: Int -> Int -> Double
+divf a b = (fromIntegral a) / (fromIntegral b)
 
-decay :: ASDR -> Double -> [Double]
-decay (ASDR _ d s _) sr = modulate ((+) s . (*) (1 - s) . (-) 1)
--}
-
-envelop :: ASDR -> Double -> [Double] -> [Double]
-envelop (ASDR a d s r) rate samples = concat [asp, dsp, ssp, rsp] where
-    n = length samples
-    [an, dn, rn] = map (truncate . (*) rate) [a, d, r]
-    sn = n - (an + dn + rn)
-    [as, ds, ss, rs] = splitPlaces [an, dn, sn, rn] samples
-    asp = modulate id as
-    dsp = modulate ((+) s . (*) (1 - s) . (-) 1) ds
-    ssp = map (s *) ss
-    rsp = modulate ((*) s . (-) 1) rs
+-- Modulate the given Samples by the ADSR envelope.
+envelop :: ADSR -> Double -> Samples -> Samples
+envelop (ADSR a d s r) sr samples = V.imap f samples where
+    [an, dn, rn] = map (truncate . (*) sr) [a, d, r]
+    di = an + dn
+    si = V.length samples - rn
+    f i x
+        | i < an    = x * (interpolate 0 1 (i `divf` an))
+        | i < di    = x * (interpolate 1 s ((i - an) `divf` dn))
+        | i < si    = x * s
+        | otherwise = x * (interpolate s 0 ((i - si) `divf` rn))

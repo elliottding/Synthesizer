@@ -1,19 +1,30 @@
-module WaveTable (WaveTable, sine, triangle, sawtooth, sample,
-                  sampleDuration) where
+module WaveTable (WaveTable(..)
+                 , save
+                 , load
+                 , sampleRate
+                 , sample
+                 , sine
+                 , triangle
+                 , sawtooth
+                 ) where
 
-import BasicTypes (Sample, SampleRate, Frequency, defaultSampleRate)
-import Util (takeEvery)
+import Samples (Samples(..))
 
+import qualified Data.Vector as V
 
--- A list of Doubles, representing the positional data of an oscillating wave
--- over a single period.
-type WaveTable = [Double]
+-- A WaveTable represents the positional data of an oscillating wave over a
+-- single period. A WaveTable's sample rate is equal to the length of the
+-- data vector.
+type WaveTable = V.Vector Double
+
+-- The default WaveTable sample rate.
+defaultSampleRate :: Double
+defaultSampleRate = 96000
 
 -- Create a WaveTable from a sample rate, a period, and a time-to-position
 -- oscillating function.
-makeWaveTable :: SampleRate -> Double -> (Double -> Double) -> WaveTable
-makeWaveTable sampleRate period f =
-    take (truncate sampleRate) $ map f [0 :: Double, (period / sampleRate)..]
+makeWaveTable :: Double -> Double -> (Double -> Double) -> WaveTable
+makeWaveTable sr per f = V.generate (truncate sr) $ f . (*) (per / sr) . fromIntegral
 
 -- Create a WaveTable using the default sample rate.
 makeWaveTable' :: Double -> (Double -> Double) -> WaveTable
@@ -33,22 +44,31 @@ triangleF t = 2 * c * (t - (fromIntegral thalf)) where
 triangle :: WaveTable
 triangle = makeWaveTable' 2 triangleF
 
+-- The sawtooth wave position function.
+sawtoothF :: Double -> Double
+sawtoothF t = t - fromIntegral (truncate t)
+
 -- A sawtooth WaveTable.
 sawtooth :: WaveTable
-sawtooth = makeWaveTable' 1 f where
-    f t = t - fromIntegral (truncate t)
+sawtooth = makeWaveTable' 1 sawtoothF
 
--- Generate (infinite) samples from a WaveTable at a given frequency.
-sampleForever :: WaveTable -> Frequency -> [Sample]
-sampleForever wt freq = takeEvery n $ cycle wt where
-    n = truncate $ freq -- defaultSampleRate / freq
+-- Return the sample rate of a WaveTable.
+sampleRate :: WaveTable -> Double
+sampleRate = fromIntegral . V.length
 
--- Generate n samples from a WaveTable at a given frequency.
-sample :: WaveTable -> Frequency -> Int -> [Sample]
-sample wt freq n = take n $ sampleForever wt freq
+-- Load a WaveTable from a file.
+load :: FilePath -> IO (WaveTable)
+load = fmap (V.fromList . map read . words) . readFile
 
--- Generate samples from a WaveTable at a given frequency for the provided
--- duration in seconds.
-sampleDuration :: WaveTable -> Frequency -> Double -> [Sample]
-sampleDuration wt freq sec = sample wt freq n where
-    n = truncate $ defaultSampleRate * sec
+-- Save a WaveTable to a file.
+save :: FilePath -> WaveTable -> IO ()
+save path = writeFile path . unwords . V.toList . V.map show
+
+-- Generate n samples from the WaveTable at a new sample rate and a provided
+-- frequency.
+sample :: WaveTable -> Double -> Double -> Int -> Samples
+sample wt sr freq n = V.generate n f where
+    m = V.length wt
+    s = freq * sr / (fromIntegral m)
+    f = (V.!) wt . flip mod m . truncate . (*) s . fromIntegral
+
