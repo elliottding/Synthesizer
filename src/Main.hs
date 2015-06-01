@@ -1,31 +1,13 @@
 module Main where
 
--- import Control.Concurrent.Async
--- import Control.Concurrent
-
 import BasicTypes (additive)
 import Envelope (ASDR(..))
 import Note (Note(..), pitchToFrequency)
-import qualified Oscillator as Osc
+import Oscillator (Oscillator(..), sine, triangle, sawtooth)
 import Play (play)
 import Synth (Synth(..), synthesizeNotes)
 
 import Control.Monad (forever)
-
--- import qualified Data.ByteString.Char8 as Char8
-
--- import System.Process (createProcess, shell, CreateProcess(..), StdStream(..))
--- import System.IO (hSetBuffering, hSetBinaryMode, hPutStrLn, hGetLine, stdin, hFlush, stdout, BufferMode(..), Handle)
-
--- import System.Exit (ExitCode)
-
--- import Data.Time
--- import Data.Time.Clock.POSIX (getPOSIXTime, POSIXTime)
-
-{-
-delay :: Int -> IO ()
-delay = threadDelay . (1000 *)
--}
 
 defaultAttack :: Double
 defaultAttack = 0.200
@@ -45,8 +27,8 @@ defaultASDR = ASDR defaultAttack defaultDecay defaultSustain defaultRelease
 defaultVolume :: Double
 defaultVolume = 1.0
 
-defaultOscs :: [Osc.Oscillator]
-defaultOscs = [Osc.sine, Osc.sawtooth, Osc.triangle]
+defaultOscs :: [Oscillator]
+defaultOscs = [sine, sawtooth, triangle]
 
 defaultSynth :: Synth
 defaultSynth = Synth defaultOscs defaultVolume additive defaultASDR
@@ -55,14 +37,45 @@ main :: IO ()
 main = do
     let synth = defaultSynth
     playCommand synth "play C3 D3 E3 F3 G3 A3 B3 C4"
-    forever $ do
-        getLine >>= playCommand synth
+    loop synth
 
-playCommand :: Synth -> String -> IO ()
-playCommand synth command = do
-    let pitches = drop 1 $ words command
-    let n = fromIntegral $ length pitches :: Double
-    let freqs = map pitchToFrequency pitches
-    let notes = map (\(t, freq) -> Note t 1 freq) $ zip [1.0..n] freqs
+playCommand :: Synth -> String -> IO (Synth)
+playCommand synth line = do
+    let pitches = drop 1 $ words line
+        n = fromIntegral $ length pitches :: Double
+        freqs = map pitchToFrequency pitches
+        notes = map (\(t, freq) -> Note t 1 freq) $ zip [1.0..n] freqs
     play $ synthesizeNotes synth notes
+    return synth
+
+setCommand :: Synth -> String -> IO (Synth)
+setCommand synth@(Synth oscs vol method asdr) line = do
+    let params = words line
+    case params !! 1 of
+        "volume" -> return $ Synth oscs (read $ params !! 2 :: Double) method asdr
+        "osc" ->
+        _ -> return synth
+
+setOscCommand :: Synth -> String -> IO (Synth)
+
+modifyOsc :: Synth -> Int -> (Oscillator -> Oscillator) -> Synth
+modifyOsc (Synth oscs vol m asdr) index f = Synth oscs' vol m asdr where
+    (xs, ys) = splitAt index oscs
+    osc' = f $ last xs
+    oscs' = (init xs) ++ (osc' : ys)
+
+loop :: Synth -> IO ()
+loop synth = do
+    line <- getLine
+    case head (words line) of
+        "play" -> do
+            synth' <- playCommand synth line
+            loop synth'
+        "set" -> do
+            synth' <- setCommand synth line
+            loop synth'
+        "end" -> return ()
+        _ -> do
+            putStrLn "Unrecognized command."
+            loop synth
 
