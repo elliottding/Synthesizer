@@ -1,6 +1,12 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Envelope where
+module Envelope (ADSR(..)
+                , attack
+                , decay
+                , sustain
+                , release
+                , envelop
+                ) where
 
 import Samples (Samples(..))
 

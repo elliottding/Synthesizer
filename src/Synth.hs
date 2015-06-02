@@ -1,13 +1,19 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Synth where
+module Synth (Synth(..)
+             , oscillators
+             , amplitude
+             , envelope
+             , sampleRate
+             , synthesizeNotes
+             ) where
 
-import Envelope (ADSR, envelop, _release)
-import Oscillator (Oscillator, sample)
+import Envelope (ADSR, envelop, release)
 import Note (Note(..))
+import Oscillator (Oscillator, sample)
 import Samples (Samples(..), composeAll, zipWithOffset)
 
-import Control.Lens (makeLenses)
+import Control.Lens (makeLenses, (^.))
 
 import qualified Data.Vector as V
 
@@ -15,7 +21,7 @@ data Synth = Synth { _oscillators :: [Oscillator]
                    , _amplitude :: Double
                    , _envelope :: ADSR
                    , _sampleRate :: Double
-                   }
+                   } deriving (Show)
 
 makeLenses ''Synth
 
@@ -28,17 +34,17 @@ synthesize (Synth oscs amp adsr sr) freq n = enveloped where
 
 synthesizeDuration :: Synth -> Double -> Double -> Samples
 synthesizeDuration synth freq secs = synthesize synth freq n where
-    n = truncate $ secs * (_sampleRate synth)
+    n = truncate $ secs * (synth ^. sampleRate)
 
 synthesizeNote :: Synth -> Note -> Samples
 synthesizeNote synth (Note _ duration freq) = 
     synthesizeDuration synth freq secs where 
-        secs = duration + (_release (_envelope synth))
+        secs = duration + (synth ^. envelope . release)
 
 combineNote :: Synth -> Note -> Samples -> Samples
-combineNote synth note@(Note time duration freq) samples =
+combineNote synth note@(Note time _ _) samples =
     zipWithOffset (+) 0 0 0 offset samples synthesized where
-        offset = truncate $ time * (_sampleRate synth)
+        offset = truncate $ time * (synth ^. sampleRate)
         synthesized = synthesizeNote synth note
 
 synthesizeNotes :: Synth -> [Note] -> Samples

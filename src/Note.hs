@@ -1,11 +1,19 @@
-module Note where
+{-# LANGUAGE TemplateHaskell #-}
+
+module Note (Note(..)
+            , pitchToFrequency
+            ) where
+
+import Control.Lens (makeLenses)
 
 import Data.Char (isDigit)
 
-data Note = Note { noteTime :: Double
-                 , noteDuration :: Double
-                 , noteFrequency :: Double
-                 }
+data Note = Note { _time :: Double
+                 , _duration :: Double
+                 , _frequency :: Double
+                 } deriving (Show)
+
+makeLenses ''Note
 
 baseFrequency :: Double
 baseFrequency = 440

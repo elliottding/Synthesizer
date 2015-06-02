@@ -73,6 +73,7 @@ sample wt sr freq n = V.generate n f where
     s = freq * sr / (fromIntegral m)
     f = (V.!) wt . flip mod m . truncate . (*) s . fromIntegral
 
+-- Return a default WaveTable from a String.
 fromString :: String -> WaveTable
 fromString name = case name of
     "sine"     -> sine
