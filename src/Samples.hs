@@ -17,9 +17,11 @@ series a b n = V.generate n f where
     f x = (fromIntegral x) / nf * (b - a) + a
     nf = fromIntegral n
 
+-- Compose two samples using addition.
 compose :: Samples -> Samples -> Samples
 compose = zipWithPadding (+) 0 0
 
+-- Compose all samples in the list using addition.
 composeAll :: [Samples] -> Samples
 composeAll = foldr compose V.empty
 

@@ -25,24 +25,32 @@ data Oscillator = Oscillator { _wave :: WT.WaveTable
 
 makeLenses ''Oscillator
 
+-- The default amplitude of an Oscillator.
 defaultAmplitude :: Double
 defaultAmplitude = 0.1
 
+-- The default phase of an Oscillator.
 defaultPhase :: Double
 defaultPhase = 0
 
+-- Create a default Oscillator from a WaveTable.
 makeDefault :: WT.WaveTable -> Oscillator
 makeDefault wt = Oscillator wt defaultAmplitude defaultPhase
 
+-- Generate n samples from the Oscillator using the provided sample rate and
+-- frequency.
 sample :: Oscillator -> Double -> Double -> Int -> Samples
 sample (Oscillator wt amp phase) sr freq n = V.map (amp *) samples where
     samples = WT.sample wt sr freq n
 
+-- A default sine Oscillator.
 sine :: Oscillator
 sine = makeDefault WT.sine
 
+-- A default triangle Oscillator.
 triangle :: Oscillator
 triangle = makeDefault WT.triangle
 
+-- A default sawtooth Oscillator.
 sawtooth :: Oscillator
 sawtooth = makeDefault WT.sawtooth

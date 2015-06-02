@@ -1,6 +1,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Note (Note(..)
+            , time
+            , duration
+            , frequency
             , pitchToFrequency
             ) where
 
@@ -15,26 +18,33 @@ data Note = Note { _time :: Double
 
 makeLenses ''Note
 
+-- Frequency of A4 at concert pitch.
 baseFrequency :: Double
 baseFrequency = 440
 
+-- Pitch value of A4.
 basePitch :: Int
 basePitch = 9
 
+-- Octave of A4.
 baseOctave :: Int
 baseOctave = 4
 
+-- Tone value of A4.
 baseTone :: Int
 baseTone = absoluteTone basePitch baseOctave
 
+-- Calculate the tone value from pitch and octave.
 absoluteTone :: Int -> Int -> Int
 absoluteTone pitch octave = pitch + (octave * 12)
 
+-- Calculate the frequency from pitch and octave, based on A4.
 absoluteFrequency :: Int -> Int -> Double
 absoluteFrequency pitch octave = baseFrequency * (2.0 ** power) where
     power = (fromIntegral $ tone - baseTone) / 12.0 :: Double
     tone = absoluteTone pitch octave
 
+-- Return the pitch value for the given character.
 pitchValue :: Char -> Int
 pitchValue c = case c of
     'C' -> 0
@@ -46,12 +56,14 @@ pitchValue c = case c of
     'B' -> 11
     _ -> error "Unrecognized pitch character."
 
+-- Return the pitch augmentation value of the given accidental.
 accidentalValue :: Char -> Int
 accidentalValue c = case c of
     '#' -> 1
     'b' -> (-1)
     _ -> 0
 
+-- Calculate the frequency of a pitch represented as a String.
 pitchToFrequency :: String -> Double
 pitchToFrequency s
     | length s < 2 = error "Invalid pitch string format."
