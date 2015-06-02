@@ -1,12 +1,12 @@
 module Main where
 
-import Envelope (ADSR(..))
+import qualified Envelope as Env
+import qualified Oscillator as Osc
+import qualified Synth as Syn
 import Note (Note(..), pitchToFrequency)
-import Oscillator (Oscillator(..), sine, triangle, sawtooth, oscFromString
-                  , oscWaveTable)
 import Play (play)
-import Synth (Synth(..), synthesizeNotes, synthSR)
 
+import Control.Lens ((.~), element)
 import Control.Monad (forever)
 import qualified Data.Vector as V
 
@@ -25,80 +25,75 @@ defaultSustain = 0.8
 defaultRelease :: Double
 defaultRelease = 0.500
 
-defaultADSR :: ADSR
-defaultADSR = ADSR defaultAttack defaultDecay defaultSustain defaultRelease
+defaultADSR :: Env.ADSR
+defaultADSR = Env.ADSR defaultAttack defaultDecay defaultSustain defaultRelease
 
 defaultVolume :: Double
 defaultVolume = 1.0
 
-defaultOscs :: [Oscillator]
-defaultOscs = [sine, sawtooth, triangle]
+defaultOscs :: [Osc.Oscillator]
+defaultOscs = [Osc.sine, Osc.sawtooth, Osc.triangle]
 
-defaultSynth :: Synth
-defaultSynth = Synth defaultOscs defaultVolume defaultADSR defaultSampleRate
+defaultSynth :: Syn.Synth
+defaultSynth = Syn.Synth defaultOscs defaultVolume defaultADSR defaultSampleRate
 
 -- Play Notes using the provided Synth at the given sample rate.
-playSynth :: Synth -> [Note] -> IO ()
-playSynth synth notes = play (synthSR synth) $ synthesizeNotes synth notes
+playSynth :: Syn.Synth -> [Note] -> IO ()
+playSynth synth notes = 
+    play (Syn._sampleRate synth) $ Syn.synthesizeNotes synth notes
 
-main :: IO ()
-main = do
-    let synth = defaultSynth
-    playCommand synth "play C4 D4 E4 F4 G4 A4 B4 C5"
-    loop synth
+synthModifier :: [String] -> (Syn.Synth -> Syn.Synth)
+synthModifier params = case arg of
+    "samplerate" -> Syn.sampleRate .~ value
+    "amp"        -> Syn.amplitude .~ value
+    "attack"     -> Syn.envelope . Env.attack .~ value
+    "decay"      -> Syn.envelope . Env.decay .~ value
+    "sustain"    -> Syn.envelope . Env.sustain .~ value
+    "release"    -> Syn.envelope . Env.release .~ value
+    "osc"        -> oscModifier params
+    _            -> id
+    where
+        arg = params !! 0
+        value = read $ params !! 1 :: Double
 
-playCommand :: Synth -> String -> IO (Synth)
-playCommand synth line = do
-    let pitches = drop 1 $ words line
-        n = fromIntegral $ length pitches :: Double
-        freqs = map pitchToFrequency pitches
-        notes = map (\(t, freq) -> Note t 1 freq) $ zip [1.0..n] freqs
+oscModifier :: [String] -> (Syn.Synth -> Syn.Synth)
+oscModifier params = case arg of
+    "amp"   -> Syn.oscillators . element i . Osc.amplitude .~ read value
+    "wave"  -> Syn.oscillators . element i . Osc.wave .~ (Osc._wave $ Osc.oscFromString value)
+    "phase" -> Syn.oscillators . element i . Osc.phase .~ read value
+    _       -> id
+    where
+        i = read $ params !! 1 :: Int
+        arg = params !! 2
+        value = params !! 3
+
+playCommand :: Syn.Synth -> [String] -> IO (Syn.Synth)
+playCommand synth params = do
+    let n = fromIntegral $ length params
+        freqs = map pitchToFrequency params
+        notes = map (\(t, freq) -> Note t 1 freq) $ zip [1..n] freqs
     playSynth synth notes
     return synth
 
-setCommand :: Synth -> String -> IO (Synth)
-setCommand synth@(Synth oscs amp adsr sr) line = do
-    let params = words line
-    case params !! 1 of
-        "amp" -> return $ Synth oscs (read $ params !! 2 :: Double) adsr sr
-        "osc" -> setOscCommand synth line
-        _ -> return synth
+setCommand :: Syn.Synth -> [String] -> IO (Syn.Synth)
+setCommand synth params = return $ synthModifier params synth
 
-oscModifier :: String -> String -> Oscillator -> Oscillator
-oscModifier arg value osc@(Oscillator wt amp phase) = case arg of
-    "amp"   -> Oscillator wt (read value :: Double) phase
-    "phase" -> Oscillator wt amp (read value :: Double)
-    "wave"  -> Oscillator (oscWaveTable $ oscFromString value) amp phase
-    _       -> osc
-
-setOscCommand :: Synth -> String -> IO (Synth)
-setOscCommand synth@(Synth oscs _ _ _) line = do
-    let params = words line
-    let index = read $ params !! 2 :: Int
-    let arg = params !! 3
-    let value = params !! 4
-    return $ modifyOsc synth index (oscModifier arg value)
-
-modifyOsc :: Synth -> Int -> (Oscillator -> Oscillator) -> Synth
-modifyOsc (Synth oscs amp adsr sr) index f = Synth oscs' amp adsr sr where
-    (xs, ys) = splitAt index oscs
-    osc' = f $ last xs
-    oscs' = (init xs) ++ (osc' : ys)
-
-loop :: Synth -> IO ()
+loop :: Syn.Synth -> IO ()
 loop synth = do
     line <- getLine
     let params = words line
     if length params < 1 then loop synth else
         case head (words line) of
             "play" -> do
-                synth' <- playCommand synth line
+                synth' <- playCommand synth $ tail params
                 loop synth'
             "set" -> do
-                synth' <- setCommand synth line
+                synth' <- setCommand synth $ tail params
                 loop synth'
             "end" -> return ()
             _ -> do
                 putStrLn "Unrecognized command."
                 loop synth
 
+main :: IO ()
+main = loop defaultSynth

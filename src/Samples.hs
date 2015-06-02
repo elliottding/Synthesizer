@@ -1,7 +1,4 @@
 module Samples (Samples(..)
-               , V.map
-               , V.imap
-               , V.length
                , compose
                , composeAll
                , zipWithPadding
@@ -15,16 +12,16 @@ type Samples = V.Vector Double
 modulate :: Num a => V.Vector a -> V.Vector a -> V.Vector a
 modulate = V.zipWith (*)
 
+series :: Double -> Double -> Int -> V.Vector Double
+series a b n = V.generate n f where
+    f x = (fromIntegral x) / nf * (b - a) + a
+    nf = fromIntegral n
+
 compose :: Samples -> Samples -> Samples
 compose = zipWithPadding (+) 0 0
 
 composeAll :: [Samples] -> Samples
 composeAll = foldr compose V.empty
-
-series :: Double -> Double -> Int -> V.Vector Double
-series a b n = V.generate n f where
-    f x = (fromIntegral x) / nf * (b - a) + a
-    nf = fromIntegral n
 
 -- zipWith on different lengths by right-padding the Vectors using the given
 -- padding elements.

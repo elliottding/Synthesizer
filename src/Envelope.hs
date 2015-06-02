@@ -1,15 +1,19 @@
-module Envelope (ADSR(..)
-                , envelop) where
+{-# LANGUAGE TemplateHaskell #-}
+
+module Envelope where
 
 import Samples (Samples(..))
 
+import Control.Lens (makeLenses)
 import qualified Data.Vector as V
 
-data ADSR = ADSR { adsrAttack :: Double
-                 , adsrDecay :: Double
-                 , adsrSustain :: Double
-                 , adsrRelease :: Double
+data ADSR = ADSR { _attack :: Double
+                 , _decay :: Double
+                 , _sustain :: Double
+                 , _release :: Double
                  } deriving (Show)
+
+makeLenses ''ADSR
 
 -- Interpolate x between a and b.
 interpolate :: Double -> Double -> Double -> Double

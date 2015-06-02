@@ -1,14 +1,19 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Oscillator where
 
 import qualified WaveTable as WT
 import Samples (Samples(..))
 
+import Control.Lens (makeLenses)
 import qualified Data.Vector as V
 
-data Oscillator = Oscillator { oscWaveTable :: WT.WaveTable
-                             , oscAmp :: Double
-                             , oscPhase :: Double
+data Oscillator = Oscillator { _wave :: WT.WaveTable
+                             , _amplitude :: Double
+                             , _phase :: Double
                              }
+
+makeLenses ''Oscillator
 
 defaultAmplitude :: Double
 defaultAmplitude = 0.1

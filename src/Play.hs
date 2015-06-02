@@ -18,7 +18,7 @@ prepareSamples = Char8.pack . map doubleToChar8 . V.toList
 
 -- The SoX command for sound playback.
 soxCommand :: Double -> String
-soxCommand sr = "play -c 2 -b 8 -e unsigned -t raw -r "
+soxCommand sr = "play -q -c 2 -b 8 -e unsigned -t raw -r "
               ++ (show sr)
               ++ " -"
 
@@ -33,4 +33,3 @@ play sr samples = do
     hSetBuffering handle NoBuffering
     hSetBinaryMode handle True
     Char8.hPutStr handle $ prepareSamples $ samples
-    putStrLn ""
