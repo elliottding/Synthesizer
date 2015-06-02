@@ -6,6 +6,7 @@ module WaveTable (WaveTable(..)
                  , sine
                  , triangle
                  , sawtooth
+                 , fromString
                  ) where
 
 import Samples (Samples(..))
@@ -72,3 +73,9 @@ sample wt sr freq n = V.generate n f where
     s = freq * sr / (fromIntegral m)
     f = (V.!) wt . flip mod m . truncate . (*) s . fromIntegral
 
+fromString :: String -> WaveTable
+fromString name = case name of
+    "sine"     -> sine
+    "triangle" -> triangle
+    "sawtooth" -> sawtooth
+    _          -> error "Unrecognized WaveTable name."
