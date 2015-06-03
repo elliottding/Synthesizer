@@ -25,16 +25,16 @@ defaultSampleRate :: Double
 defaultSampleRate = 44100
 
 defaultAttack :: Double
-defaultAttack = 0.200
+defaultAttack = 0.050
 
 defaultDecay :: Double
-defaultDecay = 0.200
+defaultDecay = 0.050
 
 defaultSustain :: Double
-defaultSustain = 0.8
+defaultSustain = 1.0
 
 defaultRelease :: Double
-defaultRelease = 0.500
+defaultRelease = 0.100
 
 defaultADSR :: Env.ADSR
 defaultADSR = Env.ADSR defaultAttack defaultDecay defaultSustain defaultRelease
@@ -43,7 +43,7 @@ defaultVolume :: Double
 defaultVolume = 1.0
 
 defaultOscs :: [Osc.Oscillator]
-defaultOscs = [Osc.sine, Osc.sawtooth, Osc.triangle]
+defaultOscs = [Osc.sine]
 
 defaultSynth :: Syn.Synth
 defaultSynth = Syn.Synth defaultOscs defaultVolume defaultADSR defaultSampleRate

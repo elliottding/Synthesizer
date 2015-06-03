@@ -17,18 +17,18 @@ prepareSamples :: S.Samples -> Char8.ByteString
 prepareSamples = Char8.pack . map doubleToChar8 . V.toList
 
 -- The SoX command for sound playback.
-soxCommand :: Double -> String
-soxCommand sr = "play -q -c 2 -b 8 -e unsigned -t raw -r "
+soxPlay :: Double -> String
+soxPlay sr = "play -q -c 2 -b 8 -e unsigned -t raw -r "
               ++ (show sr)
               ++ " -"
+
+soxOutput :: Double -> String
+soxOutput sr = "play "
 
 -- Play the samples using SoX.
 play :: Double -> S.Samples -> IO ()
 play sr samples = do
-    let process = (shell $ soxCommand sr) { std_in = CreatePipe
-                                          --, std_out = CreatePipe
-                                          --, std_err = CreatePipe
-                                          }
+    let process = (shell $ soxPlay sr) { std_in = CreatePipe }
     (Just handle, _, _, _) <- createProcess process
     hSetBuffering handle NoBuffering
     hSetBinaryMode handle True

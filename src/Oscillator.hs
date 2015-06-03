@@ -11,7 +11,7 @@ module Oscillator (Oscillator(..)
                   , sample
                   ) where
 
-import Samples (Samples(..))
+import Samples (Samples)
 import qualified WaveTable as WT
 
 import Control.Lens (makeLenses)
@@ -40,7 +40,7 @@ makeDefault wt = Oscillator wt defaultAmplitude defaultPhase
 -- Generate n samples from the Oscillator using the provided sample rate and
 -- frequency.
 sample :: Oscillator -> Double -> Double -> Int -> Samples
-sample (Oscillator wt amp phase) sr freq n = V.map (amp *) samples where
+sample (Oscillator wt amp _) sr freq n = V.map (amp *) samples where
     samples = WT.sample wt sr freq n
 
 -- A default sine Oscillator.

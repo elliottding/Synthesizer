@@ -1,4 +1,4 @@
-module Samples (Samples(..)
+module Samples (Samples
                , compose
                , composeAll
                , zipWithPadding
@@ -9,6 +9,7 @@ import qualified Data.Vector as V
 
 type Samples = V.Vector Double
 
+{-
 modulate :: Num a => V.Vector a -> V.Vector a -> V.Vector a
 modulate = V.zipWith (*)
 
@@ -16,6 +17,7 @@ series :: Double -> Double -> Int -> V.Vector Double
 series a b n = V.generate n f where
     f x = (fromIntegral x) / nf * (b - a) + a
     nf = fromIntegral n
+-}
 
 -- Compose two samples using addition.
 compose :: Samples -> Samples -> Samples

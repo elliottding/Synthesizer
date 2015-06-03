@@ -1,4 +1,4 @@
-module WaveTable (WaveTable(..)
+module WaveTable (WaveTable
                  , save
                  , load
                  , sampleRate
@@ -38,7 +38,7 @@ sine = makeWaveTable' (2 * pi) sin
 -- The triangle wave position function.
 triangleF :: Double -> Double
 triangleF t = 2 * c * (t - (fromIntegral thalf)) where
-    thalf = truncate $ t + 0.5
+    thalf = truncate $ t + 0.5 :: Int
     c = if even thalf then 1.0 else (-1.0)
 
 -- A triangle WaveTable.
@@ -47,7 +47,7 @@ triangle = makeWaveTable' 2 triangleF
 
 -- The sawtooth wave position function.
 sawtoothF :: Double -> Double
-sawtoothF t = t - fromIntegral (truncate t)
+sawtoothF t = t - fromIntegral (truncate t :: Int)
 
 -- A sawtooth WaveTable.
 sawtooth :: WaveTable
@@ -70,7 +70,7 @@ save path = writeFile path . unwords . V.toList . V.map show
 sample :: WaveTable -> Double -> Double -> Int -> Samples
 sample wt sr freq n = V.generate n f where
     m = V.length wt
-    s = freq * sr / (fromIntegral m)
+    s = freq * (fromIntegral m) / sr
     f = (V.!) wt . flip mod m . truncate . (*) s . fromIntegral
 
 -- Return a default WaveTable from a String.

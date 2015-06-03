@@ -5,6 +5,7 @@ module Note (Note(..)
             , duration
             , frequency
             , pitchToFrequency
+            , makeNote
             ) where
 
 import Control.Lens (makeLenses)
@@ -17,6 +18,10 @@ data Note = Note { _time :: Double
                  } deriving (Show)
 
 makeLenses ''Note
+
+-- Create a Note from a time, duration, and pitch as String.
+makeNote :: Double -> Double -> String -> Note
+makeNote t d p = Note t d (pitchToFrequency p)
 
 -- Frequency of A4 at concert pitch.
 baseFrequency :: Double

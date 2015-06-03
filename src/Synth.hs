@@ -11,7 +11,7 @@ module Synth (Synth(..)
 import Envelope (ADSR, envelop, release)
 import Note (Note(..))
 import Oscillator (Oscillator, sample)
-import Samples (Samples(..), composeAll, zipWithOffset)
+import Samples (Samples, composeAll, zipWithOffset)
 
 import Control.Lens (makeLenses, (^.))
 
