@@ -5,6 +5,7 @@ module Synth (Synth(..)
              , amplitude
              , envelope
              , sampleRate
+             , bpm
              , synthesizeNotes
              ) where
 
@@ -18,16 +19,17 @@ import Control.Lens (makeLenses, (^.))
 import qualified Data.Vector as V
 
 data Synth = Synth { _oscillators :: [Oscillator]
-                   , _amplitude :: Double
-                   , _envelope :: ADSR
-                   , _sampleRate :: Double
+                   , _amplitude   :: Double
+                   , _envelope    :: ADSR
+                   , _sampleRate  :: Double
+                   , _bpm         :: Double
                    } deriving (Show)
 
 makeLenses ''Synth
 
 -- Synthesize n samples at the provided frequency.
 synthesize :: Synth -> Double -> Int -> Samples
-synthesize (Synth oscs amp adsr sr) freq n = enveloped where
+synthesize (Synth oscs amp adsr sr _) freq n = enveloped where
     oscSamples = map (\o -> sample o sr freq n) oscs
     samples = composeAll oscSamples
     amped = V.map (amp *) samples
@@ -43,7 +45,7 @@ synthesizeDuration synth freq secs = synthesize synth freq n where
 synthesizeNote :: Synth -> Note -> Samples
 synthesizeNote synth (Note _ duration freq) = 
     synthesizeDuration synth freq secs where 
-        secs = duration + (synth ^. envelope . release)
+        secs = (duration * 60 / (synth ^. bpm)) + (synth ^. envelope . release)
 
 -- Combine samples with the synthesized samples from a Note.
 combineNote :: Synth -> Note -> Samples -> Samples

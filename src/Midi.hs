@@ -1,34 +1,54 @@
-module Midi (Midi
-            , toNotes
-            ) where
+module Midi (loadMidiNotes) where
 
-import Note (Note(..))
+import Note (Note(..), absoluteFrequency)
 
-import Codec.Midi (Midi(..), Track(..), Ticks(..), Message(..), Key(..))
-import Data.List (sortBy)
+import Codec.Midi (Midi(..), Track, Ticks, Message(..), TimeDiv(..), Key, importFile)
+import qualified Data.Map as M
 
-instance Ord Message where
-    compare (NoteOn  _ k1 _) (NoteOn  _ k2 _) = compare k1 k2
-    compare (NoteOn  _ k1 _) (NoteOff _ k2 _) = compare k1 k2
-    compare (NoteOff _ k1 _) (NoteOn  _ k2 _) = compare k1 k2
-    compare (NoteOff _ k1 _) (NoteOff _ k2 _) = compare k1 k2
-    compare _                _                = EQ
-
-instance Ord a => Ord Track a where
-    compare (a1, m1) (a2, m2)
-        | cm == EQ  = compare a1 a2
-        | otherwise = cm
-        where cm = compare m1 m2
-
+-- Convert a Midi structure into a list of Notes.
 toNotes :: Midi -> [Note]
-toNotes (Midi _ tpb tracks) = sort tracks
+toNotes (Midi _ (TicksPerBeat tpb) ts) = 
+    concatMap (map (adjustTimes tpb) . trackToNotes) ts
+toNotes (Midi _ (TicksPerSecond tpb _) ts) =
+    concatMap (map (adjustTimes tpb) . trackToNotes) ts
 
+-- Adjust times of a Note by the given ticks per beat parameter.
+adjustTimes :: Ticks -> Note -> Note
+adjustTimes tpb (Note t d f) = Note (adjust t) (adjust d) f where
+    adjust x = x / (fromIntegral tpb)
+
+-- Return the frequency corresponding to the given Midi Key.
 keyToFrequency :: Key -> Double
-keyToFrequency k = 0
+keyToFrequency k = absoluteFrequency (k - 12)
 
-eventsToNote :: Track Ticks -> Track Ticks -> Note
-eventsToNote (t1, (NoteOn _ k _)) (t2, (NoteOff _ _ _)) = 
-    Note time duration freq where
-        time = t1
-        duration = t2 - t1
-        freq = keyToFrequency k
+-- Convert a Midi track to a list of Notes.
+trackToNotes :: Track Ticks -> [Note]
+trackToNotes = (\(_, _, r) -> r) . foldl processEvent (0, M.empty, [])
+
+-- Load Notes from a Midi file.
+loadMidiNotes :: FilePath -> IO [Note]
+loadMidiNotes path = do
+    eMidi <- importFile path
+    case eMidi of
+        Right midi -> return $ toNotes midi
+        Left  msg  -> error msg
+
+-- Create a Note from the given times in Ticks.
+makeNote :: Ticks -> Ticks -> Key -> Note
+makeNote t t' k = Note time dur freq where
+    time = fromIntegral t
+    dur = fromIntegral (t' - t)
+    freq = keyToFrequency k
+
+-- Process a Midi event.
+processEvent :: (Ticks, M.Map Key Ticks, [Note]) -> (Ticks, Message) -> (Ticks, M.Map Key Ticks, [Note])
+processEvent (time, keyMap, notes) (offset, m) = case m of
+    NoteOn  _ k _ -> case M.lookup k keyMap of
+        Just _ -> (newTime, keyMap, notes)
+        Nothing    -> (newTime, M.insert k newTime keyMap, notes)
+    NoteOff _ k _ -> case M.lookup k keyMap of
+        Just stime -> (newTime, M.delete k keyMap, notes ++ [makeNote stime newTime k])
+        Nothing    -> (newTime, keyMap, notes)
+    _             -> (newTime, keyMap, notes)
+    where
+        newTime = time + offset

@@ -4,6 +4,7 @@ module Note (Note(..)
             , time
             , duration
             , frequency
+            , absoluteFrequency
             , pitchToFrequency
             , makeNote
             ) where
@@ -43,11 +44,10 @@ baseTone = absoluteTone basePitch baseOctave
 absoluteTone :: Int -> Int -> Int
 absoluteTone pitch octave = pitch + (octave * 12)
 
--- Calculate the frequency from pitch and octave, based on A4.
-absoluteFrequency :: Int -> Int -> Double
-absoluteFrequency pitch octave = baseFrequency * (2.0 ** power) where
+-- Calculate the frequency from a tone, based on A4.
+absoluteFrequency :: Int -> Double
+absoluteFrequency tone = baseFrequency * (2.0 ** power) where
     power = (fromIntegral $ tone - baseTone) / 12.0 :: Double
-    tone = absoluteTone pitch octave
 
 -- Return the pitch value for the given character.
 pitchValue :: Char -> Int
@@ -72,7 +72,7 @@ accidentalValue c = case c of
 pitchToFrequency :: String -> Double
 pitchToFrequency s
     | length s < 2 = error "Invalid pitch string format."
-    | otherwise = absoluteFrequency pitch octave where
+    | otherwise = absoluteFrequency (absoluteTone pitch octave) where
         hasAccidental = not $ isDigit $ s !! 1
         pitch
             | hasAccidental = pitchValue (s !! 0) + accidentalValue (s !! 1)

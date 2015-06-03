@@ -1,11 +1,12 @@
 module Main where
 
 import qualified Envelope as Env
+import qualified Midi as Midi
 import qualified Oscillator as Osc
 import qualified Synth as Syn
 import qualified WaveTable as WT
 import Note (Note(..), pitchToFrequency)
-import Play (play)
+import Play (play, output)
 
 import Control.Lens ((.~), (^.), (%~), element)
 import Control.Monad (forever)
@@ -20,6 +21,9 @@ import System.Directory (createDirectoryIfMissing
                         )
 
 type WaveTableMap = M.Map String WT.WaveTable
+
+defaultBPM :: Double
+defaultBPM = 120
 
 defaultSampleRate :: Double
 defaultSampleRate = 44100
@@ -46,7 +50,7 @@ defaultOscs :: [Osc.Oscillator]
 defaultOscs = [Osc.sine]
 
 defaultSynth :: Syn.Synth
-defaultSynth = Syn.Synth defaultOscs defaultVolume defaultADSR defaultSampleRate
+defaultSynth = Syn.Synth defaultOscs defaultVolume defaultADSR defaultSampleRate defaultBPM
 
 -- Play Notes using the provided Synth at the given sample rate.
 playSynth :: Syn.Synth -> [Note] -> IO ()
@@ -95,6 +99,7 @@ waveTableLookup name wtMap = case M.lookup name wtMap of
 synthModifier :: WaveTableMap -> [String] -> (Syn.Synth -> Syn.Synth)
 synthModifier wtMap params = case arg of
     "samplerate" -> Syn.sampleRate .~ value
+    "bpm"        -> Syn.bpm .~ value
     "amp"        -> Syn.amplitude .~ value
     "attack"     -> Syn.envelope . Env.attack .~ value
     "decay"      -> Syn.envelope . Env.decay .~ value
@@ -120,11 +125,32 @@ oscModifier wtMap params = case arg of
 
 -- Handle a play command.
 playCommand :: Syn.Synth -> [String] -> IO ()
-playCommand synth params = do
-    let n = fromIntegral $ length params
-        freqs = map pitchToFrequency params
-        notes = map (\(t, freq) -> Note t 1 freq) $ zip [1..n] freqs
-    playSynth synth notes
+playCommand synth params = case head params of
+    "midi" -> do
+        let path = params !! 1
+        notes <- Midi.loadMidiNotes path
+        playSynth synth notes
+    _      -> do
+        let n = fromIntegral $ length params
+            freqs = map pitchToFrequency params
+            notes = map (\(t, freq) -> Note t 1 freq) $ zip [1..n] freqs
+        playSynth synth notes
+
+-- Handle an output command.
+outputCommand :: Syn.Synth -> [String] -> IO ()
+outputCommand synth params = case head params of
+    "midi" -> do
+        let inPath = params !! 1
+        let outPath = params !! 2
+        notes <- Midi.loadMidiNotes inPath
+        output outPath (synth ^. Syn.sampleRate) $ Syn.synthesizeNotes synth notes
+    _      -> do
+        let pitches = init params
+            n = fromIntegral $ length pitches
+            freqs = map pitchToFrequency pitches
+            notes = map (\(t, freq) -> Note t 1 freq) $ zip [1..n] freqs
+            path = last params
+        output path (synth ^. Syn.sampleRate) $ Syn.synthesizeNotes synth notes
 
 -- Handle an add command.
 addCommand :: WaveTableMap -> [String] -> Syn.Synth -> Syn.Synth
@@ -150,6 +176,9 @@ loop synth wtMap = do
             "add" -> do
                 let synth' = addCommand wtMap (tail params) synth
                 loop synth' wtMap
+            "output" -> do
+                outputCommand synth $ tail params
+                loop synth wtMap
             "end" -> return ()
             _ -> do
                 putStrLn "Unrecognized command."

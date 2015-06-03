@@ -18,7 +18,7 @@ test = describe "Synth" $ do
             let adsr = ADSR 0 0 1 0
             
             -- Sample rate is 44000 Hz
-            let synth = Synth [osc] 1 adsr 44000
+            let synth = Synth [osc] 1 adsr 44000 60
             
             -- Note is 440 Hz
             let note = Note 0 1 440
@@ -39,7 +39,7 @@ test = describe "Synth" $ do
         it "produces Samples of the correct length on multiple Notes" $ do
             let osc = Oscillator sine 1 0
             let adsr = ADSR 0 0 1 0
-            let synth = Synth [osc] 1 adsr 1000
+            let synth = Synth [osc] 1 adsr 1000 60
             let note = Note 0 1 100
             let note' = Note 1 2 100
 
