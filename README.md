@@ -51,8 +51,8 @@ Add an oscillator that loads the wave table given by _osc-type_ to the synth.
 
 **output** _note1_ [_note2_] ... _outfile_
 
-Output all notes to the given _outfile_.
+Output all notes to the given _outfile_ in .wav format.
 
 **output** midi _infile_ _outfile_
 
-Load a .midi file, and output the sound to the _outfile_.
+Load a .midi file, and output the sound to the _outfile_ in .wav format.
