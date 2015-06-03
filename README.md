@@ -7,7 +7,9 @@ CMSC 22311 Final Project
 
 Play a sequence of notes. Notes must be in scientific pitch notation, separated
 by spaces. Ex:
+
     play A3 B3 C#4 D4 E4 F#4 G#4 A4
+
 plays an A-major scale starting at the A below middle C.
 
 **play** midi _file_
