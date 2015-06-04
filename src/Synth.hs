@@ -38,9 +38,9 @@ makeLenses ''Synth
 processNote :: Synth -> Note -> Processed
 processNote synth@(Synth _ _ (ADSR _ _ _ rel) sr b) (Note t d f) =
     Processed samples lower upper where
-        n = truncate $ sr * (d * 60 / b + rel)
+        n = truncate $ sr * (d * 60 / (b / 2) + rel)
         samples = synthesize synth f n
-        lower = truncate $ sr * t * 60 / b
+        lower = truncate $ sr * t * 60 / (b / 2)
         upper = lower + n
 
 -- Index into Processed data. If the index is within range, return the sample.
