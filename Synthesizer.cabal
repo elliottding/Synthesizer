@@ -1,10 +1,20 @@
 name:                synthesizer
 version:             0.1.0.0             
-license-file:        LICENSE
+synopsis:            CMSC 22311 Final Project
 author:              Elliott Ding
 maintainer:          elliottzding@gmail.com       
 build-type:          Simple
 extra-source-files:  README.md
+                     ,test/TestEnvelope.hs
+                     ,test/TestMidi.hs
+                     ,test/TestNote.hs
+                     ,test/TestOscillator.hs
+                     ,test/TestSamples.hs
+                     ,test/TestSynth.hs
+                     ,test/TestUtil.hs
+                     ,test/TestWaveTable.hs
+                     ,test/c.midi
+                     ,data/custom.png
 cabal-version:       >=1.10
 
 library
@@ -40,6 +50,8 @@ executable synth
     ,containers
     ,vector
     ,directory
+  default-language: Haskell2010
+  ghc-options: -Wall
 
 test-suite test-synth
   hs-source-dirs: test

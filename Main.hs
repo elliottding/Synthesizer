@@ -9,11 +9,9 @@ import Note (Note(..), pitchToFrequency)
 import Play (play, output)
 
 import Control.Lens ((.~), (^.), (%~), element)
-import Control.Monad (forever)
 
 import Data.List (isSuffixOf)
 import qualified Data.Map as M
-import qualified Data.Vector as V
 
 import System.Directory (createDirectoryIfMissing
                         , getDirectoryContents
@@ -86,7 +84,7 @@ generateWaveTableIfMissing :: String -> IO ()
 generateWaveTableIfMissing name = do
     let path = "./data/" ++ name ++ ".wavetable"
     missing <- doesFileExist path
-    if missing
+    if not missing
         then WT.save path (WT.fromString name)
         else return ()
 
