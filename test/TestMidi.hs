@@ -16,7 +16,7 @@ test :: SpecWith ()
 test = describe "Midi" $ do
     describe "loadMidiNotes" $ do
         it "loads a .midi file" $ do
-            notes <- loadMidiNotes "test/c.midi"
+            _ <- loadMidiNotes "test/c.midi"
             return ()
 
         it "reads and creates Notes from a .midi file" $ do

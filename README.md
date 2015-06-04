@@ -3,10 +3,10 @@ CMSC 22311 Final Project
 
 ## Overview
 
-This is a basic digital audio synthesizer written in Haskell. To run the 
-program, the [Sound eXchange utility](http://sox.sourceforge.net/) must be 
-installed: the `play` and `sox` executables must be configured in the user's
-system `PATH`.
+This is a basic digital audio synthesizer written in Haskell. For sound
+playback and recording, the
+[Sound eXchange utility](http://sox.sourceforge.net/) must be installed: the
+`play` and `sox` executables must be configured in the user's system `PATH`.
 
 ## Commands
 
@@ -77,6 +77,7 @@ synthesizer and are stored in the `/data/` folder. These default wave tables
 include basic sine, triangle, and sawtooth waves.
 
 The user can allow the synthesizer to load custom wave tables in addition to
-the provided defaults. 
+the provided defaults. Custom wave tables can be included in the `/data/`
+folder in .png RGB8 image format.
 
 Oscillators can be set to use any loaded wave table using the **set** command.

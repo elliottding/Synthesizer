@@ -7,10 +7,14 @@ module WaveTable (WaveTable
                  , triangle
                  , sawtooth
                  , fromString
+                 , loadFromImage
                  ) where
 
-import Samples (Samples(..))
+import Samples (Samples)
+import Util (upsample)
 
+import Codec.Picture (DynamicImage(..), Image(..), PixelRGB8(..), readPng)
+import Codec.Picture.Types (pixelFold)
 import qualified Data.Vector as V
 
 -- A WaveTable represents the positional data of an oscillating wave over a
@@ -80,3 +84,39 @@ fromString name = case name of
     "triangle" -> triangle
     "sawtooth" -> sawtooth
     _          -> error "Unrecognized WaveTable name."
+
+-- Threshold a pixel to a bit value.
+threshold :: PixelRGB8 -> Bool
+threshold (PixelRGB8 r _ _) = r == 0
+
+-- Update the Vector with a Pixel and its coordinates.
+updatePixelVector :: V.Vector Double -> Int -> Int -> PixelRGB8 -> V.Vector Double
+updatePixelVector v x y p
+    | threshold p = v V.// [(x, y')]
+    | otherwise   = v
+    where
+        y' = (fromIntegral y) / 127.5 - 1.0
+
+-- Convert a wave Image to a Vector.
+imageToVector :: Image PixelRGB8 -> V.Vector Double
+imageToVector img = pixelFold updatePixelVector (V.generate width (\_ -> 0)) img where
+    width = imageWidth img
+
+-- Unwrap an Image from a DynamicImage.
+unwrapImage :: DynamicImage -> Image PixelRGB8
+unwrapImage (ImageRGB8 img) = img
+unwrapImage _ = error "Unhandled image format."
+
+-- Create a WaveTable from an Image.
+fromImage :: Image PixelRGB8 -> WaveTable
+fromImage = upsample 96000 . imageToVector
+
+-- Load a WaveTable from an image.
+loadFromImage :: FilePath -> IO WaveTable
+loadFromImage path = do
+    eimg <- readPng path
+    case eimg of
+        Left  err  -> error err
+        Right dimg -> do
+            let wt = fromImage $ unwrapImage dimg
+            return wt

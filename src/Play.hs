@@ -6,7 +6,7 @@ import qualified Data.ByteString.Char8 as Char8
 import qualified Data.Vector as V
 
 import System.Process (createProcess, shell, CreateProcess(..), StdStream(..))
-import System.IO (hSetBuffering, hSetBinaryMode, hPutStr, BufferMode(..))
+import System.IO (hSetBuffering, hSetBinaryMode, BufferMode(..))
 
 -- Map from [-1.0, 1.0] to [0, 255] to a Char.
 doubleToChar8 :: Double -> Char

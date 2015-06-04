@@ -8,7 +8,8 @@ module Envelope (ADSR(..)
                 , envelop
                 ) where
 
-import Samples (Samples(..))
+import Samples (Samples)
+import Util (interpolate, divf)
 
 import Control.Lens (makeLenses)
 import qualified Data.Vector as V
@@ -20,14 +21,6 @@ data ADSR = ADSR { _attack :: Double
                  } deriving (Show)
 
 makeLenses ''ADSR
-
--- Interpolate x between a and b.
-interpolate :: Double -> Double -> Double -> Double
-interpolate a b x = x * (b - a) + a
-
--- Float division on Ints.
-divf :: Int -> Int -> Double
-divf a b = (fromIntegral a) / (fromIntegral b)
 
 -- Modulate the given Samples by the ADSR envelope.
 envelop :: ADSR -> Double -> Samples -> Samples

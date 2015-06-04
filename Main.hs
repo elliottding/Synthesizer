@@ -64,13 +64,22 @@ loadWaveTable path = do
     let name = drop (length "./data/") $ take (length path - length ".wavetable") path
     return (name, wt)
 
+-- Load a WaveTable from an image and return a name, table pair.
+loadWaveTableImage :: String -> IO (String, WT.WaveTable)
+loadWaveTableImage path = do
+    wt <- WT.loadFromImage path
+    let name = drop (length "./data/") $ take (length path - length ".png") path
+    return (name, wt)
+
 -- Load all WaveTables into a Map of name, table pairs.
 loadWaveTables :: IO WaveTableMap
 loadWaveTables = do
     allFiles <- getDirectoryContents "./data"
     let wtFiles = map ((++) "./data/") $ filter (isSuffixOf ".wavetable") allFiles
+    let pngFiles = map ((++) "./data/") $ filter (isSuffixOf ".png") allFiles
     pairs <- mapM loadWaveTable wtFiles
-    return $ M.fromList pairs
+    pairs' <- mapM loadWaveTableImage pngFiles
+    return $ M.fromList (pairs ++ pairs')
 
 -- Generate the default WaveTable if missing.
 generateWaveTableIfMissing :: String -> IO ()
