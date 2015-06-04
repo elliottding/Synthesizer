@@ -51,7 +51,8 @@ synthesizeNote synth (Note _ duration freq) =
 combineNote :: Synth -> Note -> Samples -> Samples
 combineNote synth note@(Note time _ _) samples =
     zipWithOffset (+) 0 0 0 offset samples synthesized where
-        offset = truncate $ time * (synth ^. sampleRate)
+        time' = time * 60 / (synth ^. bpm)
+        offset = truncate $ time' * (synth ^. sampleRate)
         synthesized = synthesizeNote synth note
 
 -- Synthesize samples for all provided Notes.
