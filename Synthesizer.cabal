@@ -5,6 +5,7 @@ author:              Elliott Ding
 maintainer:          elliottzding@gmail.com       
 build-type:          Simple
 extra-source-files:  README.md
+                     ,.gitignore
                      ,test/TestEnvelope.hs
                      ,test/TestMidi.hs
                      ,test/TestNote.hs

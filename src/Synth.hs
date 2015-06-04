@@ -9,7 +9,7 @@ module Synth (Synth(..)
              , synthesizeNotes
              ) where
 
-import Envelope (ADSR, envelop, release)
+import Envelope (ADSR(..), envelop, release)
 import Note (Note(..))
 import Oscillator (Oscillator, sample)
 import Samples (Samples, composeAll, zipWithOffset)
@@ -25,7 +25,40 @@ data Synth = Synth { _oscillators :: [Oscillator]
                    , _bpm         :: Double
                    } deriving (Show)
 
+-- Represents the Samples of a processed Note, and its lower and upper sample
+-- time indices.
+data Processed = Processed { _samples :: V.Vector Double
+                           , _lower   :: Int
+                           , _upper   :: Int
+                           }
+
 makeLenses ''Synth
+
+-- Convert a Note into Processed sample data.
+processNote :: Synth -> Note -> Processed
+processNote synth@(Synth _ _ (ADSR _ _ _ rel) sr b) (Note t d f) =
+    Processed samples lower upper where
+        n = truncate $ sr * (d * 60 / b + rel)
+        samples = synthesize synth f n
+        lower = truncate $ sr * t * 60 / b
+        upper = lower + n
+
+-- Index into Processed data. If the index is within range, return the sample.
+-- Otherwise, return 0.
+(!?) :: Processed -> Int -> Double
+(Processed s l u) !? i
+    | (i >= l) && (i < u) = s V.! (i - l)
+    | otherwise           = 0
+
+-- Sum all samples at the given index in all given Processed data.
+sampleAt :: [Processed] -> Int -> Double
+sampleAt ps i = foldr ((+) . flip (!?) i) 0 ps
+
+-- Combine all Processed into a Vector of Doubles.
+combineProcessed :: [Processed] -> V.Vector Double
+combineProcessed ps = V.generate (m-1) (sampleAt ps) where
+    m = foldr maxUpper 0 ps
+    maxUpper (Processed _ _ u) b = max u b
 
 -- Synthesize n samples at the provided frequency.
 synthesize :: Synth -> Double -> Int -> Samples
@@ -35,26 +68,6 @@ synthesize (Synth oscs amp adsr sr _) freq n = enveloped where
     amped = V.map (amp *) samples
     enveloped = envelop adsr sr amped
 
--- Synthesize samples at the provided frequency for the provided duration in
--- seconds.
-synthesizeDuration :: Synth -> Double -> Double -> Samples
-synthesizeDuration synth freq secs = synthesize synth freq n where
-    n = truncate $ secs * (synth ^. sampleRate)
-
--- Synthesize samples for a given Note.
-synthesizeNote :: Synth -> Note -> Samples
-synthesizeNote synth (Note _ duration freq) = 
-    synthesizeDuration synth freq secs where 
-        secs = (duration * 60 / (synth ^. bpm)) + (synth ^. envelope . release)
-
--- Combine samples with the synthesized samples from a Note.
-combineNote :: Synth -> Note -> Samples -> Samples
-combineNote synth note@(Note time _ _) samples =
-    zipWithOffset (+) 0 0 0 offset samples synthesized where
-        time' = time * 60 / (synth ^. bpm)
-        offset = truncate $ time' * (synth ^. sampleRate)
-        synthesized = synthesizeNote synth note
-
 -- Synthesize samples for all provided Notes.
 synthesizeNotes :: Synth -> [Note] -> Samples
-synthesizeNotes synth notes = foldr (combineNote synth) V.empty notes
+synthesizeNotes = (combineProcessed .) . (map . processNote)

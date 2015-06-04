@@ -43,6 +43,7 @@ test = describe "Synth" $ do
             let note = Note 0 1 100
             let note' = Note 1 2 100
 
-            -- Total duration should be 3 seconds, or 3000 samples
+            -- Total duration should be 3 seconds, or 3000 samples.
+            -- Allow 2 samples of truncation tolerance.
             let samples = synthesizeNotes synth [note, note']
-            V.length samples `shouldBe` 3000
+            abs (V.length samples - 3000) <= 2 `shouldBe` True
