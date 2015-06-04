@@ -14,7 +14,7 @@ test :: SpecWith ()
 test = describe "Synth" $ do
     describe "synthesizeNotes" $ do
         it "synthesizes a single Note" $ do
-            let osc = Oscillator sine 1 0
+            let osc = Oscillator sine 1 0 0
             let adsr = ADSR 0 0 1 0
             
             -- Sample rate is 44000 Hz
@@ -37,13 +37,14 @@ test = describe "Synth" $ do
             V.mapM_ (doublesShouldBeEqual (-1)) e100o75
 
         it "produces Samples of the correct length on multiple Notes" $ do
-            let osc = Oscillator sine 1 0
+            let osc = Oscillator sine 1 0 0
             let adsr = ADSR 0 0 1 0
-            let synth = Synth [osc] 1 adsr 1000 60
+            let synth = Synth [osc] 1 adsr 1000 120
             let note = Note 0 1 100
             let note' = Note 1 2 100
 
             -- Total duration should be 3 seconds, or 3000 samples.
             -- Allow 2 samples of truncation tolerance.
             let samples = synthesizeNotes synth [note, note']
+            -- V.length samples `shouldBe` 3000
             abs (V.length samples - 3000) <= 2 `shouldBe` True

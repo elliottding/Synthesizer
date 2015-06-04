@@ -21,28 +21,28 @@ import System.Directory (createDirectoryIfMissing
 type WaveTableMap = M.Map String WT.WaveTable
 
 defaultBPM :: Double
-defaultBPM = 120
+defaultBPM = 100
 
 defaultSampleRate :: Double
-defaultSampleRate = 44100
+defaultSampleRate = 48000
 
 defaultAttack :: Double
-defaultAttack = 0.050
+defaultAttack = 0
 
 defaultDecay :: Double
-defaultDecay = 0.050
+defaultDecay = 0
 
 defaultSustain :: Double
-defaultSustain = 1.0
+defaultSustain = 1
 
 defaultRelease :: Double
-defaultRelease = 0.100
+defaultRelease = 0
 
 defaultADSR :: Env.ADSR
 defaultADSR = Env.ADSR defaultAttack defaultDecay defaultSustain defaultRelease
 
 defaultVolume :: Double
-defaultVolume = 1.0
+defaultVolume = 1
 
 defaultOscs :: [Osc.Oscillator]
 defaultOscs = [Osc.sine]
@@ -124,6 +124,7 @@ oscModifier wtMap params = case arg of
     "amp"   -> Syn.oscillators . element i . Osc.amplitude .~ read value
     "wave"  -> Syn.oscillators . element i . Osc.wave .~ (waveTableLookup value wtMap) 
     "phase" -> Syn.oscillators . element i . Osc.phase .~ read value
+    "pitch" -> Syn.oscillators . element i . Osc.pitch .~ read value
     _       -> id
     where
         i = read $ params !! 1 :: Int
