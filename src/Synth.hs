@@ -9,12 +9,12 @@ module Synth (Synth(..)
              , synthesizeNotes
              ) where
 
-import Envelope (ADSR(..), envelop, release)
+import Envelope (ADSR(..), envelop)
 import Note (Note(..))
 import Oscillator (Oscillator, sample)
-import Samples (Samples, composeAll, zipWithOffset)
+import Samples (Samples, composeAll)
 
-import Control.Lens (makeLenses, (^.))
+import Control.Lens (makeLenses)
 
 import qualified Data.Vector as V
 
