@@ -37,6 +37,7 @@ output path sr samples = do
     hSetBuffering handle NoBuffering
     hSetBinaryMode handle True
     Char8.hPutStr handle $ prepareSamples $ samples
+    putStrLn "Done."
 
 -- Play the samples using SoX.
 play :: Double -> S.Samples -> IO ()
@@ -46,3 +47,4 @@ play sr samples = do
     hSetBuffering handle NoBuffering
     hSetBinaryMode handle True
     Char8.hPutStr handle $ prepareSamples $ samples
+    putStrLn "Done."
